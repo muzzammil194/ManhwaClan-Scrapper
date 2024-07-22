@@ -6,7 +6,7 @@ import cors from 'cors';
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors()); 
+app.use(cors());
 
 class ERROR_FOUND extends Error {
   statusCode: number;
@@ -21,13 +21,13 @@ const Handler = (err: ERROR_FOUND, req: Request, res: Response, next: NextFuncti
   res.status(err.statusCode || 500).json({
     error: {
       message: err.message,
-      statusCode: err.statusCode || 500
-    }
+      statusCode: err.statusCode || 500,
+    },
   });
 };
 
 const Custom_headers = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
 };
 
 async function fetchImages(title: string, chapter: string): Promise<string[]> {
@@ -87,7 +87,7 @@ async function fetchDetails(title: string) {
       alternative,
       genres,
       type,
-      status
+      status,
     };
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -109,10 +109,10 @@ async function search(query: string) {
       const title = $(element).find('.post-title').text().trim();
       const resultUrl = $(element).find('a').attr('href');
       if (title && resultUrl) {
-        results.push({ 
-          title, 
-          url: resultUrl, 
-          "url-1": `https://manhwa-clan.vercel.app/api/${title.toLowerCase().replace(/\s+/g, '-')}/details` 
+        results.push({
+          title,
+          url: resultUrl,
+          "url-1": `https://manhwa-clan.vercel.app/api/${title.toLowerCase().replace(/\s+/g, '-')}/details`,
         });
       }
     });
