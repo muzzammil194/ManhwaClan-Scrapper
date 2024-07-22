@@ -26,14 +26,27 @@ const Handler = (err: ERROR_FOUND, req: Request, res: Response, next: NextFuncti
   });
 };
 
-const Custom_headers = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-};
+const userAgents = [ // umm yea don'y ask
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
+];
+
+const Custom_headers = () => ({ // yay more headers... why me
+  'User-Agent': userAgents[Math.floor(Math.random() * userAgents.length)],
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Referer': 'https://manhwaclan.com/',
+  'Connection': 'keep-alive',
+  'Upgrade-Insecure-Requests': '1',
+});
+
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchImages(title: string, chapter: string): Promise<string[]> {
-  const url = `https://manhwaclan.com/manga/${title}/chapter-${chapter}/`;
+  const url = `https://manhwaclan.com/manga/${encodeURIComponent(title)}/chapter-${chapter}/`;
   try {
-    const { data } = await axios.get(url, { headers: Custom_headers });
+    const { data } = await axios.get(url, { headers: Custom_headers() });
     const $ = cheerio.load(data);
 
     const imageUrls: string[] = [];
@@ -58,10 +71,27 @@ async function fetchImages(title: string, chapter: string): Promise<string[]> {
   }
 }
 
-async function fetchDetails(title: string) {
-  const url = `https://manhwaclan.com/manga/${title}/`;
+async function fetchImageUrl(imageUrl: string): Promise<Buffer> {
   try {
-    const { data } = await axios.get(url, { headers: Custom_headers });
+    //await delay(2000);
+    const response = await axios.get(imageUrl, {
+      headers: Custom_headers(),
+      responseType: 'arraybuffer',
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new ERROR_FOUND(`Failed to fetch image: ${error.response?.statusText || error.message}`, error.response?.status || 500);
+    } else {
+      throw new ERROR_FOUND('An unexpected error occurred while fetching the image.', 500);
+    }
+  }
+}
+
+async function fetchDetails(title: string) {
+  const url = `https://manhwaclan.com/manga/${encodeURIComponent(title)}/`;
+  try {
+    const { data } = await axios.get(url, { headers: Custom_headers() });
     const $ = cheerio.load(data);
 
     const mangaTitle = $('.post-title h1').text().trim();
@@ -101,10 +131,10 @@ async function fetchDetails(title: string) {
 async function search(query: string) {
   const url = `https://manhwaclan.com/?s=${encodeURIComponent(query)}&post_type=wp-manga`;
   try {
-    const { data } = await axios.get(url, { headers: Custom_headers });
+    const { data } = await axios.get(url, { headers: Custom_headers() });
     const $ = cheerio.load(data);
 
-    const results: { title: string, url: string, "url-1": string }[] = [];
+    const results: { title: string, url: string, apiUrl: string }[] = [];
     $('.c-tabs-item__content').each((index, element) => {
       const title = $(element).find('.post-title').text().trim();
       const resultUrl = $(element).find('a').attr('href');
@@ -112,7 +142,7 @@ async function search(query: string) {
         results.push({
           title,
           url: resultUrl,
-          "url-1": `https://manhwa-clan.vercel.app/api/${title.toLowerCase().replace(/\s+/g, '-')}/details`,
+          apiUrl: `https://manhwa-clan.vercel.app/api/${encodeURIComponent(title.toLowerCase().replace(/\s+/g, '-'))}/details`,
         });
       }
     });
@@ -135,8 +165,24 @@ app.get('/api/:name/:chapter/images', async (req: Request, res: Response, next: 
   const { name, chapter } = req.params;
 
   try {
-    const images = await fetchImages(name, chapter);
+    const images = await fetchImages(decodeURIComponent(name), chapter);
     res.json({ images });
+  } catch (error) {
+    next(error);
+  }
+});
+// cool new endpoint...
+app.get('/api/image', async (req: Request, res: Response, next: NextFunction) => {
+  const { url } = req.query;
+
+  if (!url) {
+    return res.status(400).json({ error: 'Image URL is required' });
+  }
+
+  try {
+    const imageData = await fetchImageUrl(url as string);
+    res.set('Content-Type', 'image/jpeg');
+    res.send(imageData);
   } catch (error) {
     next(error);
   }
@@ -146,7 +192,7 @@ app.get('/api/:name/details', async (req: Request, res: Response, next: NextFunc
   const { name } = req.params;
 
   try {
-    const details = await fetchDetails(name);
+    const details = await fetchDetails(decodeURIComponent(name));
     res.json(details);
   } catch (error) {
     next(error);
@@ -157,7 +203,7 @@ app.get('/api/search/:query', async (req: Request, res: Response, next: NextFunc
   const { query } = req.params;
 
   try {
-    const results = await search(query);
+    const results = await search(decodeURIComponent(query));
     res.json({ results });
   } catch (error) {
     next(error);
