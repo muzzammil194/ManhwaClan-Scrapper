@@ -1,9 +1,12 @@
 import express, { Request, Response, NextFunction } from 'express';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import cors from 'cors';
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+app.use(cors()); 
 
 class ERROR_FOUND extends Error {
   statusCode: number;
@@ -23,10 +26,14 @@ const Handler = (err: ERROR_FOUND, req: Request, res: Response, next: NextFuncti
   });
 };
 
+const Custom_headers = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+};
+
 async function fetchImages(title: string, chapter: string): Promise<string[]> {
   const url = `https://manhwaclan.com/manga/${title}/chapter-${chapter}/`;
   try {
-    const { data } = await axios.get(url);
+    const { data } = await axios.get(url, { headers: Custom_headers });
     const $ = cheerio.load(data);
 
     const imageUrls: string[] = [];
@@ -54,7 +61,7 @@ async function fetchImages(title: string, chapter: string): Promise<string[]> {
 async function fetchDetails(title: string) {
   const url = `https://manhwaclan.com/manga/${title}/`;
   try {
-    const { data } = await axios.get(url);
+    const { data } = await axios.get(url, { headers: Custom_headers });
     const $ = cheerio.load(data);
 
     const mangaTitle = $('.post-title h1').text().trim();
@@ -94,7 +101,7 @@ async function fetchDetails(title: string) {
 async function search(query: string) {
   const url = `https://manhwaclan.com/?s=${encodeURIComponent(query)}&post_type=wp-manga`;
   try {
-    const { data } = await axios.get(url);
+    const { data } = await axios.get(url, { headers: Custom_headers });
     const $ = cheerio.load(data);
 
     const results: { title: string, url: string, "url-1": string }[] = [];
