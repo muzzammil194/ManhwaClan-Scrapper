@@ -117,3 +117,6 @@ GET https://manhwa-clan.vercel.app/api/search/solo
   ]
 }
 ```
+
+# Note
+- The search endpoint is still in progress :>
