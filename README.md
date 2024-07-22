@@ -76,47 +76,57 @@ GET https://manhwa-clan.vercel.app/api/search/solo
   "results": [
     {
       "title": "Solo Eating",
-      "url": "https://manhwaclan.com/manga/solo-eating/"
+      "url": "https://manhwaclan.com/manga/solo-eating/",
+      "url-1": "https://manhwa-clan.vercel.app/api/solo-eating/details" // custom url
     },
     {
       "title": "Solo Farming In The Tower",
-      "url": "https://manhwaclan.com/manga/solo-farming-in-the-tower/"
+      "url": "https://manhwaclan.com/manga/solo-farming-in-the-tower/",
+      "url-1": "https://manhwa-clan.vercel.app/api/solo-farming-in-the-tower/details" // custom url
     },
     {
       "title": "Solo Leveling",
-      "url": "https://manhwaclan.com/manga/solo-leveling/"
+      "url": "https://manhwaclan.com/manga/solo-leveling/",
+      "url-1": "https://manhwa-clan.vercel.app/api/solo-leveling/details" // custom url
     },
     {
       "title": "Solo Max-Level Newbie",
-      "url": "https://manhwaclan.com/manga/solo-max-level-newbie/"
+      "url": "https://manhwaclan.com/manga/solo-max-level-newbie/",
+      "url-1": "https://manhwa-clan.vercel.app/api/solo-max-level-newbie/details" // custom url
     },
     {
       "title": "The Indomitable Martial King",
-      "url": "https://manhwaclan.com/manga/the-indomitable-martial-king/"
+      "url": "https://manhwaclan.com/manga/the-indomitable-martial-king/",
+      "url-1": "https://manhwa-clan.vercel.app/api/the-indomitable-martial-king/details" // custom url
     },
     {
       "title": "The Last Adventurer",
-      "url": "https://manhwaclan.com/manga/the-last-adventurer/"
+      "url": "https://manhwaclan.com/manga/the-last-adventurer/",
+      "url-1": "https://manhwa-clan.vercel.app/api/the-last-adventurer/details" // custom url
     },
     {
       "title": "The Regressed Son of a Duke is an Assassin",
-      "url": "https://manhwaclan.com/manga/the-regressed-son-of-a-duke-is-an-assassin/"
+      "url": "https://manhwaclan.com/manga/the-regressed-son-of-a-duke-is-an-assassin/",
+      "url-1": "https://manhwa-clan.vercel.app/api/the-regressed-son-of-a-duke-is-an-assassin/details" // custom url
     },
     {
       "title": "Level Up with Skills",
-      "url": "https://manhwaclan.com/manga/level-up-with-skills/"
+      "url": "https://manhwaclan.com/manga/level-up-with-skills/",
+      "url-1": "https://manhwa-clan.vercel.app/api/level-up-with-skills/details" // custom url
     },
     {
       "title": "Mr Devourer, Please Act Like a Final Boss",
-      "url": "https://manhwaclan.com/manga/mr-devourer-please-act-like-a-final-boss/"
+      "url": "https://manhwaclan.com/manga/mr-devourer-please-act-like-a-final-boss/",
+      "url-1": "https://manhwa-clan.vercel.app/api/mr-devourer,-please-act-like-a-final-boss/details" // custom url
     },
     {
       "title": "F-Class Destiny Hunter",
-      "url": "https://manhwaclan.com/manga/f-class-destiny-hunter/"
+      "url": "https://manhwaclan.com/manga/f-class-destiny-hunter/",
+      "url-1": "https://manhwa-clan.vercel.app/api/f-class-destiny-hunter/details" // custom url
     }
   ]
 }
 ```
 
 # Note
-- The search endpoint is still in progress :>
+- This is still working in progress so I need to improve more of it.
