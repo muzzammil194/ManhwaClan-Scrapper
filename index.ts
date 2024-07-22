@@ -97,12 +97,16 @@ async function search(query: string) {
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
 
-    const results: { title: string, url: string }[] = [];
+    const results: { title: string, url: string, "url-1": string }[] = [];
     $('.c-tabs-item__content').each((index, element) => {
       const title = $(element).find('.post-title').text().trim();
       const resultUrl = $(element).find('a').attr('href');
       if (title && resultUrl) {
-        results.push({ title, url: resultUrl });
+        results.push({ 
+          title, 
+          url: resultUrl, 
+          "url-1": `https://manhwa-clan.vercel.app/api/${title.toLowerCase().replace(/\s+/g, '-')}/details` 
+        });
       }
     });
 
