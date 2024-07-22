@@ -140,7 +140,7 @@ GET https://manhwa-clan.vercel.app/api/search/solo
 
 ## Silent Update I did
 - **API Improvement:** Added the `/api/image` endpoint to fetch images directly through the server, bypassing CORS issues.
-- **Code Improvements:** Updated user-agent headers, abd added delays between requests to mimic browser behavior and avoid being blocked.
+- **Code Improvements:** Updated user-agent headers, and added delays between requests to mimic browser behavior and avoid being blocked.
 
 ## Note
 - This is still a work in progress, so I need to improve more of it.
