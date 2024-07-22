@@ -41,7 +41,7 @@ const Custom_headers = () => ({ // yay more headers... why me
   'Upgrade-Insecure-Requests': '1',
 });
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+//const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchImages(title: string, chapter: string): Promise<string[]> {
   const url = `https://manhwaclan.com/manga/${encodeURIComponent(title)}/chapter-${chapter}/`;
