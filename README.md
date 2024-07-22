@@ -1,6 +1,6 @@
 # ManhwaClan-Scrapper
 
-This was a quite fun project I did to create my own Manhwa/Manga/Manhua Website, and this just only scraps from the [ManhwaClan](https://manhwaclan.com/) Website.
+This was a quite fun project I did for fun to create my own Manhwa/Manga/Manhua Website, and this just only scraps from the [ManhwaClan](https://manhwaclan.com/) Website, that's all.
 
 ## API Endpoints
 
