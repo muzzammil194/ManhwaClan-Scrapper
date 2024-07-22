@@ -103,6 +103,7 @@ async function fetchDetails(title: string) {
     const genres = $('.genres-content a').map((i, el) => $(el).text().trim()).get();
     const type = $('.post-content_item:contains("Type") .summary-content').text().trim();
     const status = $('.post-content_item:contains("Status") .summary-content').text().trim();
+    const chapters = $('.wp-manga-chapter').length;
 
     if (!mangaTitle) {
       throw new ERROR_FOUND('Manga/Manhwa details not found.', 404);
@@ -118,6 +119,7 @@ async function fetchDetails(title: string) {
       genres,
       type,
       status,
+      chapters,
     };
   } catch (error) {
     if (axios.isAxiosError(error)) {
