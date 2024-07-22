@@ -33,6 +33,16 @@ GET https://manhwa-clan.vercel.app/api/solo-leveling/1/images
 }
 ```
 
+### Get Image by URL
+- **Endpoint:** `GET` `/api/image`
+
+**Example Request:**
+```
+GET https://manhwa-clan.vercel.app/api/image?url=https://img-1.manhwaclan.com/solo-leveling/chapter-1/001.jpg
+```
+
+This endpoint fetches an image directly from the given URL, bypassing CORS issues by serving it through your server.
+
 ### Get Details
 - **Endpoint:** `GET` `/api/:name/details`
 
@@ -77,56 +87,60 @@ GET https://manhwa-clan.vercel.app/api/search/solo
     {
       "title": "Solo Eating",
       "url": "https://manhwaclan.com/manga/solo-eating/",
-      "url-1": "https://manhwa-clan.vercel.app/api/solo-eating/details" // custom url
+      "apiUrl": "https://manhwa-clan.vercel.app/api/solo-eating/details"
     },
     {
       "title": "Solo Farming In The Tower",
       "url": "https://manhwaclan.com/manga/solo-farming-in-the-tower/",
-      "url-1": "https://manhwa-clan.vercel.app/api/solo-farming-in-the-tower/details" // custom url
+      "apiUrl": "https://manhwa-clan.vercel.app/api/solo-farming-in-the-tower/details"
     },
     {
       "title": "Solo Leveling",
       "url": "https://manhwaclan.com/manga/solo-leveling/",
-      "url-1": "https://manhwa-clan.vercel.app/api/solo-leveling/details" // custom url
+      "apiUrl": "https://manhwa-clan.vercel.app/api/solo-leveling/details"
     },
     {
       "title": "Solo Max-Level Newbie",
       "url": "https://manhwaclan.com/manga/solo-max-level-newbie/",
-      "url-1": "https://manhwa-clan.vercel.app/api/solo-max-level-newbie/details" // custom url
+      "apiUrl": "https://manhwa-clan.vercel.app/api/solo-max-level-newbie/details"
     },
     {
       "title": "The Indomitable Martial King",
       "url": "https://manhwaclan.com/manga/the-indomitable-martial-king/",
-      "url-1": "https://manhwa-clan.vercel.app/api/the-indomitable-martial-king/details" // custom url
+      "apiUrl": "https://manhwa-clan.vercel.app/api/the-indomitable-martial-king/details"
     },
     {
       "title": "The Last Adventurer",
       "url": "https://manhwaclan.com/manga/the-last-adventurer/",
-      "url-1": "https://manhwa-clan.vercel.app/api/the-last-adventurer/details" // custom url
+      "apiUrl": "https://manhwa-clan.vercel.app/api/the-last-adventurer/details"
     },
     {
       "title": "The Regressed Son of a Duke is an Assassin",
       "url": "https://manhwaclan.com/manga/the-regressed-son-of-a-duke-is-an-assassin/",
-      "url-1": "https://manhwa-clan.vercel.app/api/the-regressed-son-of-a-duke-is-an-assassin/details" // custom url
+      "apiUrl": "https://manhwa-clan.vercel.app/api/the-regressed-son-of-a-duke-is-an-assassin/details"
     },
     {
       "title": "Level Up with Skills",
       "url": "https://manhwaclan.com/manga/level-up-with-skills/",
-      "url-1": "https://manhwa-clan.vercel.app/api/level-up-with-skills/details" // custom url
+      "apiUrl": "https://manhwa-clan.vercel.app/api/level-up-with-skills/details"
     },
     {
       "title": "Mr Devourer, Please Act Like a Final Boss",
       "url": "https://manhwaclan.com/manga/mr-devourer-please-act-like-a-final-boss/",
-      "url-1": "https://manhwa-clan.vercel.app/api/mr-devourer,-please-act-like-a-final-boss/details" // custom url
+      "apiUrl": "https://manhwa-clan.vercel.app/api/mr-devourer,-please-act-like-a-final-boss/details"
     },
     {
       "title": "F-Class Destiny Hunter",
       "url": "https://manhwaclan.com/manga/f-class-destiny-hunter/",
-      "url-1": "https://manhwa-clan.vercel.app/api/f-class-destiny-hunter/details" // custom url
+      "apiUrl": "https://manhwa-clan.vercel.app/api/f-class-destiny-hunter/details"
     }
   ]
 }
 ```
 
-# Note
-- This is still working in progress so I need to improve more of it.
+## Silent Update I did
+- **API Improvement:** Added the `/api/image` endpoint to fetch images directly through the server, bypassing CORS issues.
+- **Code Improvements:** Updated user-agent headers, abd added delays between requests to mimic browser behavior and avoid being blocked.
+
+## Note
+- This is still a work in progress, so I need to improve more of it.
