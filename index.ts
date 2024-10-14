@@ -2,15 +2,19 @@ import express, { Request, Response, NextFunction } from 'express';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import cors from 'cors';
+import { connectDB } from './connection/db';
+import { Manga, IManga } from './schema/manga';
+
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
+connectDB();
 
 class ERROR_FOUND extends Error {
   statusCode: number;
-  constructor(message: string, statusCode: number) {
+  constructor (message: string, statusCode: number) {
     super(message);
     this.statusCode = statusCode;
   }
@@ -89,26 +93,77 @@ async function fetchImageUrl(imageUrl: string): Promise<Buffer> {
 }
 
 async function fetchDetails(title: string) {
+  let manga = await Manga.findOne({ mangaTitle: title });
+  console.log(manga);
+
+  if (manga) {
+    console.log('Fetching from MongoDB');
+    return manga;
+  }
+
+  console.log(encodeURIComponent(title));
+
   const url = `https://manhwaclan.com/manga/${encodeURIComponent(title)}/`;
+
   try {
     const { data } = await axios.get(url, { headers: Custom_headers() });
     const $ = cheerio.load(data);
 
     const mangaTitle = $('.post-title h1').text().trim();
-    const summary = $('.summary_content .post-content p').text().trim();
-    const imageUrl = $('.summary_image img').attr('src');
+    const summary = $('.summary_content .post-content p').text().trim() || 'No summary available';
+    const imageUrl = $('.summary_image img').attr('src') || 'default-image-url';
     const rating = $('.post-total-rating .score').text().trim();
     const rank = $('.post-content_item:contains("Rank") .summary-content').text().trim();
-    const alternative = $('.post-content_item:contains("Alternative") .summary-content').text().trim();
-    const genres = $('.genres-content a').map((i, el) => $(el).text().trim()).get();
+    const alternative = $('.post-content_item:contains("Alternative") .summary-content').text().trim() || 'No alternative titles';
+    const genres = $('.genres-content a')
+      .map((i, el) => $(el).text().trim())
+      .get();
     const type = $('.post-content_item:contains("Type") .summary-content').text().trim();
     const status = $('.post-content_item:contains("Status") .summary-content').text().trim();
-    const chapters = $('.wp-manga-chapter').length;
+    const chapter = $('.wp-manga-chapter').length;
+    // console.log(imageUrl);
 
     if (!mangaTitle) {
       throw new ERROR_FOUND('Manga/Manhwa details not found.', 404);
     }
-
+    const chapters = await scrapeChapters(encodeURIComponent(title));
+    if (mangaTitle) {
+      console.log('Manga already exists. Updating existing record.');
+      // Optionally update the existing record here
+      await Manga.updateOne(
+        { mangaTitle },
+        {
+          $set: {
+            summary,
+            imageUrl,
+            rating,
+            rank,
+            alternative,
+            genres,
+            type,
+            status,
+            chapters,
+            chapter,
+          },
+        }
+      );
+    } else {
+      console.log('Inserting new manga record');
+      const newManga = new Manga({
+        mangaTitle,
+        summary,
+        imageUrl,
+        rating,
+        rank,
+        alternative,
+        genres,
+        type,
+        status,
+        chapters,
+        chapter,
+      });
+      await newManga.save();
+    }
     return {
       mangaTitle,
       summary,
@@ -119,14 +174,79 @@ async function fetchDetails(title: string) {
       genres,
       type,
       status,
+      chapter,
       chapters,
     };
+
+
+    // return newManga;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw new ERROR_FOUND(`Failed to fetch manga details: ${error.response?.statusText || error.message}`, error.response?.status || 500);
+      throw new ERROR_FOUND(`Failed to fetch image: ${error.response?.statusText || error.message}`, error.response?.status || 500);
     } else {
-      throw new ERROR_FOUND('An unexpected error occurred while fetching manga/manhwa details.', 500);
+      console.log(error);
+      throw new ERROR_FOUND('An unexpected error occurred while fetching the image.', 500);
     }
+  }
+}
+
+const scrapeChapters = async (title: string) => {
+  const url = `https://manhwaclan.com/manga/${encodeURIComponent(title)}/`;
+  try {
+    const { data } = await axios.get(url, { headers: Custom_headers() });
+    const $ = cheerio.load(data);
+    const chapters: any = [];
+
+    $('.listing-chapters_wrap li.wp-manga-chapter').each((index, element) => {
+      const chapterNo = $(element).find('a').text().trim();
+      const label = $(element).find('.c-new-tag').length ? 'new' : undefined;
+      chapters.push({ chapterNo, label });
+    });
+
+    return chapters;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new ERROR_FOUND(`Failed to fetch image: ${error.response?.statusText || error.message}`, error.response?.status || 500);
+    } else {
+      throw new ERROR_FOUND('An unexpected error occurred while fetching the image.', 500);
+    }
+  }
+};
+
+const getOrUpdateChapters = async (title: string) => {
+  const manga = await Manga.findOne({ mangaTitle: title });
+  try {
+    if (manga) {
+      console.log('Updating chapters');
+      const newChapters = await scrapeChapters(title);
+
+      // Update the chapters and save
+      manga.chapters = newChapters;
+      await manga.save();
+
+      return manga;
+    } else {
+      console.log('Manga not found, fetching new data.');
+      return fetchDetails(title);
+    }
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.log(error);
+      throw new ERROR_FOUND(`Failed to fetch image: ${error.response?.statusText || error.message}`, error.response?.status || 500);
+    } else {
+      console.log(error);
+      throw new ERROR_FOUND('An unexpected error occurred while fetching the image.', 500);
+    }
+  }
+};
+
+async function getSelectedMangaFields() {
+  try {
+    const mangas = await Manga.find({}, 'mangaTitle imageUrl chapters');
+    return mangas;
+  } catch (error) {
+    console.error('Error fetching selected manga fields:', error);
+    throw new Error('Error fetching selected manga fields');
   }
 }
 
@@ -163,6 +283,7 @@ async function search(query: string) {
   }
 }
 
+
 app.get('/api/:name/:chapter/images', async (req: Request, res: Response, next: NextFunction) => {
   const { name, chapter } = req.params;
 
@@ -192,9 +313,39 @@ app.get('/api/image', async (req: Request, res: Response, next: NextFunction) =>
 
 app.get('/api/:name/details', async (req: Request, res: Response, next: NextFunction) => {
   const { name } = req.params;
-
   try {
+    // const details = await getManga(name);
+    console.log(decodeURIComponent(name), name);
     const details = await fetchDetails(decodeURIComponent(name));
+    res.json(details);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/mangas', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const mangas = await getSelectedMangaFields();
+    res.json(mangas);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/:name/update-chapters', async (req: Request, res: Response, next: NextFunction) => {
+  const { name } = req.params;
+  try {
+    const details = await getOrUpdateChapters(decodeURIComponent(name));
+    res.json(details);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/:name/chapters', async (req: Request, res: Response, next: NextFunction) => {
+  const { name } = req.params;
+  try {
+    const details = await scrapeChapters(decodeURIComponent(name));
     res.json(details);
   } catch (error) {
     next(error);
