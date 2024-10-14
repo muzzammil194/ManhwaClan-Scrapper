@@ -9,6 +9,8 @@ import { Manga, IManga } from './schema/manga';
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(express.json());
+
 app.use(cors());
 connectDB();
 
@@ -93,8 +95,9 @@ async function fetchImageUrl(imageUrl: string): Promise<Buffer> {
 }
 
 async function fetchDetails(title: string) {
-  let manga = await Manga.findOne({ mangaTitle: title });
-  console.log(manga);
+  const cleanedTitle = title.replace(/-/g, ' ');
+  let manga = await Manga.findOne({ mangaTitle: cleanedTitle });
+  console.log("manga",manga);
 
   if (manga) {
     console.log('Fetching from MongoDB');
@@ -126,10 +129,10 @@ async function fetchDetails(title: string) {
     if (!mangaTitle) {
       throw new ERROR_FOUND('Manga/Manhwa details not found.', 404);
     }
+    
     const chapters = await scrapeChapters(encodeURIComponent(title));
-    if (mangaTitle) {
+    if (manga) {
       console.log('Manga already exists. Updating existing record.');
-      // Optionally update the existing record here
       await Manga.updateOne(
         { mangaTitle },
         {
@@ -144,6 +147,7 @@ async function fetchDetails(title: string) {
             status,
             chapters,
             chapter,
+            availability:true,  // by default is true when API implement on dashboard then uses this  
           },
         }
       );
@@ -161,6 +165,7 @@ async function fetchDetails(title: string) {
         status,
         chapters,
         chapter,
+        availability:true, // by default is true when API implement on dashboard then uses this 
       });
       await newManga.save();
     }
@@ -177,9 +182,6 @@ async function fetchDetails(title: string) {
       chapter,
       chapters,
     };
-
-
-    // return newManga;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new ERROR_FOUND(`Failed to fetch image: ${error.response?.statusText || error.message}`, error.response?.status || 500);
@@ -242,7 +244,7 @@ const getOrUpdateChapters = async (title: string) => {
 
 async function getSelectedMangaFields() {
   try {
-    const mangas = await Manga.find({}, 'mangaTitle imageUrl chapters');
+    const mangas = await Manga.find({}, 'mangaTitle imageUrl chapters type').where('availability').equals(true);
     return mangas;
   } catch (error) {
     console.error('Error fetching selected manga fields:', error);
@@ -283,6 +285,39 @@ async function search(query: string) {
   }
 }
 
+async function updateChapterStatus(mangaTitle: string, chapterNo: string, status: boolean) {
+  try {
+    const result = await Manga.updateOne(
+      { mangaTitle, 'chapters.chapterNo': chapterNo },
+      {
+        $set: {
+          'chapters.$.status': status,
+        },
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      throw new Error('No matching chapter found or status already set');
+    }
+
+    console.log(`Chapter ${chapterNo} status updated to ${status} in ${mangaTitle}`);
+    return result;
+  } catch (error) {
+    console.error('Error updating chapter status:', error);
+    throw new Error('Error updating chapter status');
+  }
+}
+
+async function updateMultipleChapterStatuses(mangaTitle: string, chaptersToUpdate: { chapterNo: string, status: boolean }[]) {
+  try {
+    for (const { chapterNo, status } of chaptersToUpdate) {
+      await updateChapterStatus(mangaTitle, chapterNo, status);
+    }
+    console.log(`Updated statuses for all specified chapters in ${mangaTitle}`);
+  } catch (error) {
+    console.error('Error updating multiple chapters:', error);
+  }
+}
 
 app.get('/api/:name/:chapter/images', async (req: Request, res: Response, next: NextFunction) => {
   const { name, chapter } = req.params;
@@ -311,6 +346,7 @@ app.get('/api/image', async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
+// This API to get detail or if data not available to save on mongodb
 app.get('/api/:name/details', async (req: Request, res: Response, next: NextFunction) => {
   const { name } = req.params;
   try {
@@ -323,6 +359,7 @@ app.get('/api/:name/details', async (req: Request, res: Response, next: NextFunc
   }
 });
 
+// this API show data on frontend first Page
 app.get('/api/mangas', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const mangas = await getSelectedMangaFields();
@@ -332,12 +369,30 @@ app.get('/api/mangas', async (req: Request, res: Response, next: NextFunction) =
   }
 });
 
+// This API to get latest chapters update
 app.get('/api/:name/update-chapters', async (req: Request, res: Response, next: NextFunction) => {
   const { name } = req.params;
   try {
     const details = await getOrUpdateChapters(decodeURIComponent(name));
     res.json(details);
   } catch (error) {
+    next(error);
+  }
+});
+
+// This API uses in CMS/Dashboard to send the title of manahwa or chapter no with status status true to show on frontend otherwise not show
+app.post('/api/:name/chapter-status', async (req: Request, res: Response, next: NextFunction) => {
+  const { name } = req.params;
+  const chaptersToUpdate = req.body.chaptersToUpdate;
+  try {
+    if (!chaptersToUpdate || !Array.isArray(chaptersToUpdate)) {
+      throw new Error('Invalid or missing chaptersToUpdate in request body');
+    }
+
+    const details = await updateMultipleChapterStatuses(name, chaptersToUpdate);
+    res.json(details);
+  } catch (error) {
+    console.log(error);
     next(error);
   }
 });

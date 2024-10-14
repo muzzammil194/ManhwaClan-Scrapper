@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 interface Chapter {
   chapterNo: string;
   label: string | undefined;
-  status: number;
+  status: boolean;
 }
 
 export interface IManga extends Document {
@@ -18,26 +18,28 @@ export interface IManga extends Document {
   status: string;
   chapters: Chapter[];
   chapter: Number;
+  availability: Boolean;
 }
 
 const MangaSchema: Schema = new Schema({
-  mangaTitle: { type: String, required: true, unique: true },
-  summary: { type: String, required: true },
+  mangaTitle: { type: String,required: true , unique: true },
+  summary: { type: String,  },
   imageUrl: { type: String},
-  rating: { type: String, required: true },
-  rank: { type: String, required: true },
-  alternative: { type: String, required: true },
-  genres: [{ type: String, required: true }],
-  type: { type: String, required: true },
-  status: { type: String, required: true },
+  rating: { type: String,  },
+  rank: { type: String,  },
+  alternative: { type: String,  },
+  genres: [{ type: String,  }],
+  type: { type: String,  },
+  status: { type: String,  },
   chapters: [
     {
-      chapterNo: { type: String, required: true },
+      chapterNo: { type: String,  },
       label: { type: String },
-      status: { type: Number }
+      status: { type: Boolean }
     }
   ],
-  chapter: { type: Number, required: true }
+  chapter: { type: Number,  },
+  availability: { type: Boolean }
 });
 
 // Export the model
