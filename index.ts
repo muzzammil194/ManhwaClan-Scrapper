@@ -215,10 +215,11 @@ const scrapeChapters = async (title: string) => {
   }
 };
 
-const getOrUpdateChapters = async (title: string) => {
-  const manga = await Manga.findOne({ mangaTitle: title });
+const getOrUpdateChapters = async (title: string,status:number) => {
+  const cleanedTitle = title.replace(/-/g, ' ');
+  const manga = await Manga.findOne({ mangaTitle: cleanedTitle });
   try {
-    if (manga) {
+    if (manga && status===1) {
       console.log('Updating chapters');
       const newChapters = await scrapeChapters(title);
 
@@ -285,35 +286,38 @@ async function search(query: string) {
   }
 }
 
-async function updateChapterStatus(mangaTitle: string, chapterNo: string, status: boolean) {
+async function updateChapterStatus(mangaTitle: string,mangaStatus: boolean, chapterNo: string, status: boolean) {
   try {
+    const cleanedTitle = mangaTitle.replace(/-/g, ' ');
+    console.log(cleanedTitle);
     const result = await Manga.updateOne(
-      { mangaTitle, 'chapters.chapterNo': chapterNo },
+      { mangaTitle:cleanedTitle, 'chapters.chapterNo': chapterNo },
       {
         $set: {
           'chapters.$.status': status,
+          'availability':mangaStatus,
         },
       }
     );
-
     if (result.modifiedCount === 0) {
       throw new Error('No matching chapter found or status already set');
     }
-
     console.log(`Chapter ${chapterNo} status updated to ${status} in ${mangaTitle}`);
     return result;
   } catch (error) {
     console.error('Error updating chapter status:', error);
+    return error;
     throw new Error('Error updating chapter status');
   }
 }
 
-async function updateMultipleChapterStatuses(mangaTitle: string, chaptersToUpdate: { chapterNo: string, status: boolean }[]) {
+async function updateMultipleChapterStatuses(mangaTitle: string,mangaStatus: boolean, chaptersToUpdate: { chapterNo: string, status: boolean }[]) {
   try {
     for (const { chapterNo, status } of chaptersToUpdate) {
-      await updateChapterStatus(mangaTitle, chapterNo, status);
+      await updateChapterStatus(mangaTitle,mangaStatus, chapterNo, status);
     }
     console.log(`Updated statuses for all specified chapters in ${mangaTitle}`);
+    return `Updated statuses for all specified chapters in ${mangaTitle}`;
   } catch (error) {
     console.error('Error updating multiple chapters:', error);
   }
@@ -372,8 +376,9 @@ app.get('/api/mangas', async (req: Request, res: Response, next: NextFunction) =
 // This API to get latest chapters update
 app.get('/api/:name/update-chapters', async (req: Request, res: Response, next: NextFunction) => {
   const { name } = req.params;
+  const status  = req.query.status as unknown as number;
   try {
-    const details = await getOrUpdateChapters(decodeURIComponent(name));
+    const details = await getOrUpdateChapters(decodeURIComponent(name),status);
     res.json(details);
   } catch (error) {
     next(error);
@@ -384,13 +389,16 @@ app.get('/api/:name/update-chapters', async (req: Request, res: Response, next: 
 app.post('/api/:name/chapter-status', async (req: Request, res: Response, next: NextFunction) => {
   const { name } = req.params;
   const chaptersToUpdate = req.body.chaptersToUpdate;
+  const boolParam: string | undefined = req.query.isActive as string;
+
+  const isActive = boolParam === 'true'; 
   try {
     if (!chaptersToUpdate || !Array.isArray(chaptersToUpdate)) {
       throw new Error('Invalid or missing chaptersToUpdate in request body');
     }
 
-    const details = await updateMultipleChapterStatuses(name, chaptersToUpdate);
-    res.json(details);
+    const details = await updateMultipleChapterStatuses(name,isActive,chaptersToUpdate);
+    res.json({message:details});
   } catch (error) {
     console.log(error);
     next(error);
