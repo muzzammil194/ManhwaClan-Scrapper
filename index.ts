@@ -245,7 +245,27 @@ const getOrUpdateChapters = async (title: string,status:number) => {
 
 async function getSelectedMangaFields() {
   try {
-    const mangas = await Manga.find({}, 'mangaTitle imageUrl chapters type').where('availability').equals(true);
+    const mangas = await Manga.aggregate([
+      {
+        $match: {
+          availability: true,
+        }
+      },
+      {
+        $project: {
+          mangaTitle: 1,
+          imageUrl: 1,
+          type: 1,
+          chapters: {
+            $filter: {
+              input: '$chapters',
+              as: 'chapter',
+              cond: { $eq: ['$$chapter.status', true] }
+            }
+          }
+        }
+      }
+    ]);
     return mangas;
   } catch (error) {
     console.error('Error fetching selected manga fields:', error);
