@@ -4,6 +4,7 @@ interface Chapter {
   chapterNo: string;
   label: string | undefined;
   status: boolean;
+  images: string[];
 }
 
 export interface IManga extends Document {
@@ -33,9 +34,10 @@ const MangaSchema: Schema = new Schema({
   status: { type: String,  },
   chapters: [
     {
-      chapterNo: { type: String,  },
+      chapterNo: { type: String,},
       label: { type: String },
-      status: { type: Boolean }
+      status: { type: Boolean },
+      images: { type: [String] }
     }
   ],
   chapter: { type: Number,  },
