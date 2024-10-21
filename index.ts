@@ -4,12 +4,20 @@ import * as cheerio from 'cheerio';
 import cors from 'cors';
 import { connectDB } from './connection/db';
 import { Manga, IManga } from './schema/manga';
-
+import path from 'path';
+import fs from 'fs';
+import cloudinary from 'cloudinary';
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
+
+cloudinary.v2.config({
+  cloud_name: "db7bunnyq",
+  api_key: "936332415326756",
+  api_secret: "qbPfus3ZhPsST3yHoFwh3jE7rnk",
+});
 
 app.use(cors());
 connectDB();
@@ -63,9 +71,9 @@ async function fetchImages(title: string, chapter: string): Promise<string[]> {
       }
     });
 
-    if (imageUrls.length === 0) {
-      throw new ERROR_FOUND('No images found for the chapter.', 404);
-    }
+    // if (imageUrls.length === 0) {
+    //   throw new ERROR_FOUND('No images found for the chapter.', 404);
+    // }
     return imageUrls;
   } catch (error) {
     console.log("fetchImages", error);
@@ -91,6 +99,40 @@ async function fetchImageUrl(imageUrl: string): Promise<Buffer> {
     } else {
       throw new ERROR_FOUND('An unexpected error occurred while fetching the image.', 500);
     }
+  }
+}
+
+async function uploadImageFromUrl(imageUrl: string): Promise<string | null> {
+  if (!imageUrl) {
+    throw new Error('Image URL is required.');
+  }
+
+  try {
+    // Fetch the image from the URL
+    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const imageBuffer = Buffer.from(response.data, 'binary');
+
+    // Upload to Cloudinary
+    const result = await new Promise<cloudinary.UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.v2.uploader.upload_stream(
+        { resource_type: 'auto' },
+        (error, result) => {
+          if (error) {
+            reject(new Error('Error uploading to Cloudinary.'));
+          } else {
+            resolve(result as any);
+          }
+        }
+      );
+
+      // Stream the image buffer to Cloudinary
+      stream.end(imageBuffer);
+    });
+
+    return result.secure_url; // Return the Cloudinary URL
+  } catch (error) {
+    console.error(error);
+    throw new Error('Error processing image.');
   }
 }
 
@@ -127,6 +169,9 @@ async function fetchDetails(title: string) {
     if (!mangaTitle) {
       throw new ERROR_FOUND('Manga/Manhwa details not found.', 404);
     }
+
+    const image = await uploadImageFromUrl(imageUrl);
+
     const chapters = await scrapeChapters(encodeURIComponent(title));
     if (manga) {
     console.log('Manga already exists. Updating existing record.');
@@ -153,7 +198,7 @@ async function fetchDetails(title: string) {
       const newManga = new Manga({
         mangaTitle,
         summary,
-        imageUrl,
+        imageUrl: image,
         rating,
         rank,
         alternative,
@@ -169,7 +214,7 @@ async function fetchDetails(title: string) {
     return {
       mangaTitle,
       summary,
-      imageUrl,
+      imageUrl: image,
       rating,
       rank,
       alternative,
@@ -446,6 +491,28 @@ app.get('/api/search/:query', async (req: Request, res: Response, next: NextFunc
     next(error);
   }
 });
+
+app.get('/api/:name/:chapter/imagesDB', async (req: Request, res: Response, next: NextFunction) => {
+  const { name, chapter } = req.params;
+  try {
+    const cleanedTitle = name.replace(/-/g, ' ');
+    const cleanedChapter = chapter.replace(/-/g, ' ');
+    let manga = await Manga.findOne({ mangaTitle: cleanedTitle });
+    if (manga) {
+      const mangaChapter = manga.chapters.find((ch: any) => ch.chapterNo === cleanedChapter);
+      if (mangaChapter && mangaChapter.images) {
+        res.json(mangaChapter.images);
+      } else {
+        res.status(404).json({ message: 'Chapter not found or no images available' });
+      }
+    } else {
+      res.status(404).json({ message: 'Manga not found' });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 
 app.use(Handler);
 
