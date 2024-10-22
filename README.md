@@ -1,3 +1,14 @@
+Backend Repository:
+Repo Link:https://github.com/muzzammil194/ManhwaClan-Scrapper/tree/mz/api-with-db
+Branch: mz/api-with-db
+
+Setup Instructions:
+1\. In the repository, there’s a connection folder that contains the db.ts file.
+2\. Update the MongoDB connection string in db.ts by replacing <password>
+3\. After making the changes, run the project with the following command: npm run start.
+
+
+
 # ManhwaClan-Scrapper
 
 This was a quite fun project I did for fun to create my own Manhwa/Manga/Manhua Website, and this just only scraps from the [ManhwaClan](https://manhwaclan.com/) Website, that's all.
