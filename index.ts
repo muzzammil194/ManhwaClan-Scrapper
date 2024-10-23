@@ -116,7 +116,7 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string | null> {
     const result = await new Promise<cloudinary.UploadApiResponse>((resolve, reject) => {
       const stream = cloudinary.v2.uploader.upload_stream(
         { resource_type: 'auto' },
-        (error, result) => {
+        (error:any, result:any) => {
           if (error) {
             reject(new Error('Error uploading to Cloudinary.'));
           } else {

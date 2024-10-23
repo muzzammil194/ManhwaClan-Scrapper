@@ -9,6 +9,7 @@
     "dependencies": {
         "axios": "^0.21.1",
         "cheerio": "^1.0.0-rc.10",
+        "cloudinary": "^2.5.1",
         "cors": "^2.8.5",
         "express": "^4.17.1",
         "mongodb": "^6.9.0",
